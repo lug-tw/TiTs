@@ -30,7 +30,7 @@ def _valid_key_list(key_list):
 
     for k in key_list:
         if len(k) != 40:
-        return False
+            return False
 
     return True
 
@@ -50,7 +50,7 @@ class CSHeader:
             self.msg_type = msg_type
 
         else:
-            raise ValseError("invalid n or key_list")
+            raise ValueError("invalid key_list or msg_type")
 
     def encrypt(self):
         pass
@@ -111,10 +111,10 @@ class CCPayload:
     def __init__(self, payload):
         if type(payload) == type(''):
             self.payload = payload.encode()
-        else if type(payload) == type(b''):
+        elif type(payload) == type(b''):
             self.payload = payload
         else:
-            raise ValseError('payload should be str or bytes')
+            raise ValueError('payload should be str or bytes')
 
     def encrypt(self):
         pass
@@ -164,3 +164,33 @@ class TiTsProto:
 
     def __del__(self):
         pass
+
+# testing
+if __name__ == '__main__':
+    test_kl = ["7DD0628E6DB8D86466355BC094ABA8A15C7CC0BD",
+               "4ADD956CEF0703D685F2C1619A1C3CC9FBD057FC",
+               "D4E85D0DD0A59B4DFC91E71246526187F24D9E37",
+               "0B00B6BD1771B19E5B93902239A3B1BED944E4AB",
+               "B9A41E15A020D3CCF57A344BDA698A7F1B36B96F",
+               "69C9EC0C61A2F0C09DE296EB86F272230F1A804E",
+               "731B667E876258C9C946A7BF8ADE717C4726E54D",
+               "B66F3F18CEDA9D98EAC8844A63604D621DE9422B",
+               "607CB83DEA39F8382AF6CD95404FC0F0BC577A6E",
+               "0BDE82D3C6F2D4B41C0835A71D9893C4D8179092",
+               "602AD0A234EBFD13C7A81DFC48290D28562794F3",
+               "E7EC50252A41E6A9EDCB8A45A7413FD2504CF729",
+               "6CE565A4C2827E2C1B1FAC967ED8CD2F8049AC8B",
+               "5B2614662E4329E3433B3FEFE2A9EC26D765B010",
+               "A79A5FF7928432BD343E297CCB86B80E16F00F5D",
+               "D91FFE1E2266E5EC08182CCF2E040829F3F41888"]
+
+    for i in range(16):
+        # 1
+        # print(_valid_key_list(test_kl[:i]))
+
+        # 2
+        try:
+            cs_h = CSHeader(test_kl[:i], 2)
+        except ValueError as e:
+            print(i, e)
+
