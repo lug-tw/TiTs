@@ -1,3 +1,18 @@
+"""
+TiTs isn't Telegram, sorry.
+
+This file is the implementation of some common tools
+
+    _GPG: the python-gnupg wrapper
+
+doc:
+    https://pythonhosted.org/python-gnupg/
+    https://python-gnupg.readthedocs.org/en/latest/gnupg.html
+    @mrmoneyc on twitter (?)
+
+"""
+
+
 import gnupg
 import os
 import pprint
