@@ -25,6 +25,7 @@ payload (encrypted by receiver's public key)
 """
 import binascii
 import hashlib
+import random
 import struct
 import time
 
@@ -89,7 +90,10 @@ class CCHeader:
         self.sn = sn
         self.checksum = 0
         self.life_time = life_time
-        self.gid = hashlib.md5(gid.encode()).hexdigest().encode()
+        self.gid = hashlib.md5(( gid +
+                        str(int(time.time()) +
+                            int(random.random() * 55665566))
+                        ).encode()).hexdigest().encode()
         self.mime = mime
 
     def encrypt(self):
@@ -163,8 +167,8 @@ class TiTsProto:
 
         # if use the session for both in group chating
         # otherwise:
-        # cc_header: sender's private key
-        # cc_payload: receiver's public key
+        # cc_header: signed by sender
+        # cc_payload: encrypted by receiver's public key
 
         # XXX: fill this part with gpg keys
         sender_pri = ""
