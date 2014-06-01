@@ -51,13 +51,12 @@ class CSHeader:
     def __init__(self, msg_type, key_list):
         """
         msg_type: 0 for plain text, 1 for encrypted text
-        n: the length of the key list, min = 2
         key_list: list of fingerprints, each fingerprints is a string of length 40
         """
 
         if  _valid_key_list(key_list) and msg_type in [0, 1]:
             self.msg_type = msg_type
-            self.n = len(key_list)
+            self.n = len(key_list)     # n: the length of the key list, min = 2
             self.key_list = key_list
 
         else:
@@ -91,7 +90,7 @@ class CCHeader:
 
     def __init__(self, sn, life_time, gid, mime):
         """ serial number, life time, group id, mime """
-        self.timestamp = time.time()
+        self.timestamp = int(time.time())
         self.sn = sn
         self.checksum = 0
         self.life_time = life_time
@@ -119,9 +118,9 @@ class CCHeader:
         gid: 32 char string
         mime type: string
         """
-        return struct.pack("fIIi32s{}s".format(len(self.mime)),
+        return struct.pack("IIIi32s{}s2s".format(len(self.mime)),
                 self.timestamp, self.sn, self.checksum,
-                self.life_time, self.gid, self.mime.encode())
+                self.life_time, self.gid, self.mime.encode(), b'\r\n')
 
 
     def __del(self):
@@ -140,7 +139,7 @@ class CCPayload:
 
 
     def __repr__(self):
-        return payload
+        return str(self.payload)
 
     def encode(self):
         return self.payload
@@ -155,7 +154,7 @@ class TiTsProto:
         self.sn = 0
         self.session_key = b''
 
-    def msg(self, n, key_list, msg_type, mime, life_time, gid, payload):
+    def msg(self, key_list, msg_type, mime, life_time, gid, payload):
         """ return the byte object (packet) of the message """
 
         if not gid or type(gid) != type(''):
@@ -167,6 +166,11 @@ class TiTsProto:
         cc_header = CCHeader(self.sn, life_time, gid, mime)
         cc_payload = CCPayload(payload)
         cc_header.checksum = binascii.crc32(cc_payload.payload)
+
+        # DBG
+        print(cs_header)
+        print(cc_header)
+        print(cc_payload)
 
         # all secure chat would be encrypted by the session key
 
@@ -182,8 +186,33 @@ class TiTsProto:
         return  struct.pack("I", len(packet)) + packet
 
 
-    def decode(self):
-        pass
+    def decode(self, msg):
+        """ decode a message packet
+
+             0- 4:        len(packet)
+             4-12:        message type and len(key list)
+            12- x:        key list
+             x- x+48:     timestamp, serial number, checksum, lift time, group id
+             x+48 - CRLF: mime type
+             CRLF - :     payload
+        """
+        packet_length = struct.unpack("I", msg[:4])[0]
+        msg_type, n = struct.unpack("BI", msg[4:12])
+        key_list = []
+        for i in range(n):
+            key_list.append(struct.unpack("20s", msg[12+i*20 : 12+(i+1)*20])[0])
+
+
+        timestamp, sn, checksum, life_time, gid = struct.unpack("IIIi32s", msg[12+n*20:12+n*20+48])
+        mime, payload = msg[60+n*20:].split(b'\r\n')
+        mime = mime.decode()
+
+        # DBG
+        print(packet_length, msg_type, n)
+        print([binascii.hexlify(x).decode().upper() for x in key_list])
+        print(timestamp, sn, checksum, life_time, gid)
+        print(mime)
+        print(payload)
 
     def __del__(self):
         pass
@@ -229,6 +258,10 @@ if __name__ == '__main__':
     #     print(cc_h.encode())
 
     # 4
-    # tit = TiTsProto()
-    # print(tit.msg(2, test_kl[:], 0, "text/plain", 1, None, b'5566'))
+    tit = TiTsProto()
+    pkt = tit.msg(test_kl[1:9], 0, "text/plain", 1, None, b'5566')
+    print("-*-"*10)
+    print(pkt)
+    print("-*-"*10)
+    tit.decode(pkt)
     print("done")
